@@ -1,4 +1,4 @@
-# GameZone Top Up (Prototype v0.0)
+# GameZone Top Up (Navigation v0.1)
 
 ## Identitas
 - **Nama:** Ageng Setyo Nugroho
@@ -6,11 +6,14 @@
 - **Kelas:** Teknik Informatika
 
 ## Deskripsi Aplikasi
-GameZone Top Up adalah aplikasi web berbasis Flutter yang dirancang untuk memfasilitasi pembelian voucher dan diamond game secara cepat dan intuitif.
+GameZone Top Up adalah aplikasi Flutter Web multi-screen untuk pembelian item/diamond game. Versi v0.1 memuat alur navigasi antar layar, penanganan input formulir pengguna, dan layar bukti transaksi.
 
-## Cara Menjalankan Aplikasi
-1. Pastikan Flutter SDK dan Google Chrome sudah terpasang.
-2. Buka terminal di direktori project, lalu jalankan:
-   ```bash
-   flutter pub get
-   flutter run -d chrome
+## Fitur Navigasi v0.1
+1. **HomeScreen:** Katalog game dan banner promo.
+2. **TopUpFormScreen:** Form input User ID, Zone ID, pilihan nominal, dan metode pembayaran.
+3. **TransactionSuccessScreen:** Halaman ringkasan bukti pesanan setelah pengguna menekan tombol bayar.
+
+## Cara Menjalankan
+```bash
+flutter pub get
+flutter run -d chrome
