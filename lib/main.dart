@@ -6,7 +6,30 @@ void main() {
 
 // Global Store untuk menyimpan riwayat transaksi
 class TransactionStore {
-  static final List<Map<String, dynamic>> history = [];
+  static final List<Map<String, dynamic>> history = [
+    {
+      'orderId': 'GZ-DEMO001',
+      'game': 'Mobile Legends',
+      'item': '86 Diamonds',
+      'userId': '12345678',
+      'zoneId': '2024',
+      'payment': 'QRIS / All E-Wallet',
+      'total': 21000,
+      'time': '24/08/2026 10:15',
+      'status': 'BERHASIL',
+    },
+    {
+      'orderId': 'GZ-DEMO002',
+      'game': 'Free Fire',
+      'item': '140 Diamonds',
+      'userId': '987654321',
+      'zoneId': '-',
+      'payment': 'GoPay / OVO / DANA',
+      'total': 20000,
+      'time': '25/08/2026 14:30',
+      'status': 'BERHASIL',
+    },
+  ];
 }
 
 class GameZoneApp extends StatelessWidget {
@@ -1094,25 +1117,212 @@ class _CheckTransactionScreenState extends State<CheckTransactionScreen> {
   List<Map<String, dynamic>> searchResult = [];
   bool hasSearched = false;
 
+  @override
+  void initState() {
+    super.initState();
+    searchResult = List<Map<String, dynamic>>.from(TransactionStore.history);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void searchTransaction(String query) {
     setState(() {
       hasSearched = true;
-      if (query.trim().isEmpty) {
-        searchResult = List.from(TransactionStore.history);
+      final keyword = query.trim().toLowerCase();
+      if (keyword.isEmpty) {
+        searchResult = List<Map<String, dynamic>>.from(TransactionStore.history);
       } else {
-        searchResult = TransactionStore.history
-            .where((tx) =>
-        tx['orderId'].toString().toLowerCase().contains(query.toLowerCase()) ||
-            tx['userId'].toString().toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        searchResult = TransactionStore.history.where((tx) =>
+          tx['orderId'].toString().toLowerCase().contains(keyword) ||
+          tx['userId'].toString().toLowerCase().contains(keyword) ||
+          tx['game'].toString().toLowerCase().contains(keyword)
+        ).toList();
       }
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    searchResult = List.from(TransactionStore.history);
+  void _refreshList() {
+    searchTransaction(_searchController.text);
+  }
+
+  Future<void> _showTransactionForm({Map<String, dynamic>? transaction}) async {
+    final isEdit = transaction != null;
+    final gameController = TextEditingController(text: transaction?['game']?.toString() ?? '');
+    final itemController = TextEditingController(text: transaction?['item']?.toString() ?? '');
+    final userController = TextEditingController(text: transaction?['userId']?.toString() ?? '');
+    final zoneController = TextEditingController(text: transaction?['zoneId']?.toString() ?? '');
+    final totalController = TextEditingController(
+      text: transaction == null ? '' : transaction['total'].toString(),
+    );
+    String payment = transaction?['payment']?.toString() ?? 'QRIS / All E-Wallet';
+    String status = transaction?['status']?.toString() ?? 'BERHASIL';
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isEdit ? 'Ubah Data Transaksi' : 'Tambah Transaksi'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: gameController, decoration: const InputDecoration(labelText: 'Nama game')),
+                TextField(controller: itemController, decoration: const InputDecoration(labelText: 'Item top up')),
+                TextField(controller: userController, decoration: const InputDecoration(labelText: 'User ID')),
+                TextField(controller: zoneController, decoration: const InputDecoration(labelText: 'Zone ID')),
+                TextField(
+                  controller: totalController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Total pembayaran (angka)'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: payment,
+                  decoration: const InputDecoration(labelText: 'Metode pembayaran'),
+                  items: const [
+                    'QRIS / All E-Wallet',
+                    'GoPay / OVO / DANA',
+                    'Virtual Account BCA',
+                    'Alfamart / Indomaret',
+                  ].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                  onChanged: (v) => setDialogState(() => payment = v ?? payment),
+                ),
+                DropdownButtonFormField<String>(
+                  value: status,
+                  decoration: const InputDecoration(labelText: 'Status transaksi'),
+                  items: const ['BERHASIL', 'DIPROSES', 'GAGAL']
+                      .map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                  onChanged: (v) => setDialogState(() => status = v ?? status),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final total = int.tryParse(totalController.text.trim());
+                if (gameController.text.trim().isEmpty ||
+                    itemController.text.trim().isEmpty ||
+                    userController.text.trim().isEmpty ||
+                    zoneController.text.trim().isEmpty ||
+                    total == null || total <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Lengkapi semua data dan masukkan total yang valid.')),
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, {
+                  'orderId': transaction?['orderId'] ??
+                      'GZ-${DateTime.now().millisecondsSinceEpoch}',
+                  'game': gameController.text.trim(),
+                  'item': itemController.text.trim(),
+                  'userId': userController.text.trim(),
+                  'zoneId': zoneController.text.trim(),
+                  'payment': payment,
+                  'total': total,
+                  'time': transaction?['time'] ??
+                      '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} '
+                      '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                  'status': status,
+                });
+              },
+              child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    gameController.dispose();
+    itemController.dispose();
+    userController.dispose();
+    zoneController.dispose();
+    totalController.dispose();
+
+    if (result == null || !mounted) return;
+
+    setState(() {
+      if (isEdit) {
+        final index = TransactionStore.history.indexWhere(
+          (tx) => tx['orderId'] == transaction['orderId'],
+        );
+        if (index != -1) TransactionStore.history[index] = result;
+      } else {
+        TransactionStore.history.insert(0, result);
+      }
+    });
+    _refreshList();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(isEdit
+          ? 'Data transaksi berhasil diubah.'
+          : 'Transaksi baru berhasil ditambahkan.')),
+    );
+  }
+
+  void _showDetail(Map<String, dynamic> tx) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Detail Transaksi'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('No. Order: ${tx['orderId']}'),
+            Text('Game: ${tx['game']}'),
+            Text('Item: ${tx['item']}'),
+            Text('User ID: ${tx['userId']}'),
+            Text('Zone ID: ${tx['zoneId']}'),
+            Text('Pembayaran: ${tx['payment']}'),
+            Text('Total: ${formatRupiah(tx['total'] as int)}'),
+            Text('Waktu: ${tx['time']}'),
+            Text('Status: ${tx['status']}'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteTransaction(Map<String, dynamic> tx) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus transaksi?'),
+        content: Text('Data ${tx['orderId']} akan dihapus.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      setState(() {
+        TransactionStore.history.removeWhere((item) => item['orderId'] == tx['orderId']);
+      });
+      _refreshList();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transaksi berhasil dihapus.')),
+      );
+    }
   }
 
   @override
@@ -1120,18 +1330,49 @@ class _CheckTransactionScreenState extends State<CheckTransactionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cek Riwayat Transaksi'),
+        actions: [
+          IconButton(
+            tooltip: 'Muat ulang',
+            onPressed: _refreshList,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showTransactionForm(),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah Data'),
+        backgroundColor: const Color(0xFF4F46E5),
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF2FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                'Total data transaksi: ${TransactionStore.history.length}',
+                style: const TextStyle(
+                  color: Color(0xFF3730A3),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _searchController,
+                    onSubmitted: searchTransaction,
                     decoration: InputDecoration(
-                      labelText: 'Cari No. Order / User ID',
+                      labelText: 'Cari No. Order / User ID / Game',
                       isDense: true,
                       filled: true,
                       fillColor: Colors.white,
@@ -1145,9 +1386,7 @@ class _CheckTransactionScreenState extends State<CheckTransactionScreen> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () {
-                    searchTransaction(_searchController.text);
-                  },
+                  onPressed: () => searchTransaction(_searchController.text),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5),
                     padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -1161,60 +1400,118 @@ class _CheckTransactionScreenState extends State<CheckTransactionScreen> {
             Expanded(
               child: searchResult.isEmpty
                   ? Center(
-                child: Text(
-                  hasSearched ? 'Tidak ada riwayat transaksi ditemukan.' : 'Belum ada transaksi tersimpan.\nLakukan top up terlebih dahulu.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                ),
-              )
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.receipt_long_outlined, size: 54, color: Color(0xFF94A3B8)),
+                          const SizedBox(height: 8),
+                          Text(
+                            hasSearched
+                                ? 'Tidak ada riwayat transaksi ditemukan.'
+                                : 'Belum ada transaksi tersimpan.\\nTekan Tambah Data untuk membuat transaksi.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              _searchController.clear();
+                              searchTransaction('');
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Tampilkan semua data'),
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
-                itemCount: searchResult.length,
-                itemBuilder: (context, index) {
-                  final tx = searchResult[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      padding: const EdgeInsets.only(bottom: 80),
+                      itemCount: searchResult.length,
+                      itemBuilder: (context, index) {
+                        final tx = searchResult[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      tx['orderId'].toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    tx['status'].toString(),
+                                    style: TextStyle(
+                                      color: tx['status'] == 'GAGAL'
+                                          ? Colors.red
+                                          : const Color(0xFF16A34A),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      if (value == 'detail') _showDetail(tx);
+                                      if (value == 'edit') _showTransactionForm(transaction: tx);
+                                      if (value == 'delete') _deleteTransaction(tx);
+                                    },
+                                    itemBuilder: (context) => const [
+                                      PopupMenuItem(value: 'detail', child: Text('Lihat detail')),
+                                      PopupMenuItem(value: 'edit', child: Text('Ubah data')),
+                                      PopupMenuItem(value: 'delete', child: Text('Hapus data')),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 14, color: Color(0xFFE2E8F0)),
+                              Text(
+                                '${tx['game']} - ${tx['item']}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'ID: ${tx['userId']} (${tx['zoneId']})',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      tx['time'].toString(),
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                    ),
+                                  ),
+                                  Text(
+                                    formatRupiah(tx['total'] as int),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF4F46E5),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              tx['orderId'],
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                            ),
-                            Text(
-                              tx['status'],
-                              style: const TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold, fontSize: 11),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 14, color: Color(0xFFE2E8F0)),
-                        Text('${tx['game']} - ${tx['item']}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 2),
-                        Text('ID: ${tx['userId']} (${tx['zoneId']})', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(tx['time'], style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                            Text(
-                              formatRupiah(tx['total']),
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4F46E5), fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
             ),
           ],
         ),
