@@ -1,19 +1,20 @@
-# GameZone Top Up (Navigation v0.1)
+# TaskMate - v1.0
+Repository: pb_2410651037_ageng_taskmate
 
-## Identitas
-- **Nama:** Ageng Setyo Nugroho
-- **NIM:** 2410651037
-- **Kelas:** Teknik Informatika
+## Deskripsi
+TaskMate adalah aplikasi manajemen tugas berbasis Flutter yang dikembangkan secara bertahap, mulai dari pengelolaan form, validasi, state management, hingga integrasi Data Module dengan fitur CRUD lengkap dan penyimpanan lokal.
 
-## Deskripsi Aplikasi
-GameZone Top Up adalah aplikasi Flutter Web multi-screen untuk pembelian item/diamond game. Versi v0.1 memuat alur navigasi antar layar, penanganan input formulir pengguna, dan layar bukti transaksi.
+## Fitur Utama v1.0
+1. Manajemen Form & Validasi Input (BAB 6)
+2. Data Module dengan Local/Mock Data (BAB 7)
+3. Fitur CRUD Lengkap (Create, Read, Update, Delete)
+4. Komponen Empty State & Responsive User Feedback (SnackBar/Dialog)
+5. Dokumentasi lengkap (README & CHANGELOG)
 
-## Fitur Navigasi v0.1
-1. **HomeScreen:** Katalog game dan banner promo.
-2. **TopUpFormScreen:** Form input User ID, Zone ID, pilihan nominal, dan metode pembayaran.
-3. **TransactionSuccessScreen:** Halaman ringkasan bukti pesanan setelah pengguna menekan tombol bayar.
-
-## Cara Menjalankan
-```bash
-flutter pub get
-flutter run -d chrome
+## Cara Menjalankan Aplikasi
+1. Clone repository:
+   git clone https://github.com/agengsetyonugroho23-ai/pb_2410651037_ageng_taskmate.git
+2. Install dependensi:
+   flutter pub get
+3. Jalankan aplikasi:
+   flutter run
