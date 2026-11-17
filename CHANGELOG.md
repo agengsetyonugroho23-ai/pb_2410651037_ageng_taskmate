@@ -5,4 +5,8 @@
 - Peningkatan penanganan *Empty State* dan *User Feedback* (SnackBar & Dialog).
 
 ## [v0.3]
+
 - Implementasi Model Data, Mock Data, dan Fitur CRUD Sederhana.
+=======
+- Implementasi Model Data, Mock Data, dan Fitur CRUD Sederhana.
+>>>>>>> da93242 (UTS)
