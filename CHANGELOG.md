@@ -1,12 +1,8 @@
-#### B. File `CHANGELOG.md`
-```markdown
-# Changelog
-
-## [v0.1] - 2026-10-22
-
+## [v1.0] - 2026-08-31
 ### Added
-- Pengembangan alur **Navigation v0.1** dengan 3 screen terhubung (`HomeScreen`, `TopUpFormScreen`, `TransactionSuccessScreen`).
-- Penambahan penanganan input pengguna menggunakan `TextEditingController` untuk User ID dan Zone ID.
-- Pemilihan state dinamis untuk nominal item (`ChoiceChip`) dan metode pembayaran (`RadioListTile`).
-- Implementasi navigasi passing argument data dari Form ke Success Screen.
-- Penambahan fungsi `Navigator.popUntil` untuk kembali ke layar beranda secara langsung.
+- Stabilitas penuh pada modul CRUD dan sinkronisasi state lokal.
+- Pembaruan dokumentasi menyeluruh pada README.md dan CHANGELOG.md hingga versi stabil v1.0.
+- Peningkatan penanganan *Empty State* dan *User Feedback* (SnackBar & Dialog).
+
+## [v0.3]
+- Implementasi Model Data, Mock Data, dan Fitur CRUD Sederhana.
